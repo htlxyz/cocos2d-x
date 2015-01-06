@@ -308,7 +308,12 @@ public class Cocos2dxHelper {
 
     public static void setEditTextDialogResult(final String pResult) {
         try {
-            final byte[] bytesUTF8 = pResult.getBytes("UTF8");
+        	String text = filterEmoji(pResult);
+        	if (null == text || 0 == text.length()) {
+        		return;
+        	}
+
+            final byte[] bytesUTF8 = text.getBytes("UTF8");
 
             Cocos2dxHelper.sCocos2dxHelperListener.runOnGLThread(new Runnable() {
                 @Override
@@ -416,4 +421,64 @@ public class Cocos2dxHelper {
 
         public void runOnGLThread(final Runnable pRunnable);
     }
+    
+	// ==========================================================
+	// Filter Emoji
+	// ==========================================================
+    private static boolean containsEmoji(String source) {
+		if (null == source || 0 == source.length()) {
+			return false;
+		}
+
+		int len = source.length();
+		for (int i = 0; i < len; i++) {
+			char codePoint = source.charAt(i);
+			if (isEmojiCharacter(codePoint)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean isEmojiCharacter(char codePoint) {
+		return !((codePoint == 0x0) || (codePoint == 0x9) || (codePoint == 0xA)
+				|| (codePoint == 0xD)
+				|| ((codePoint >= 0x20) && (codePoint <= 0xD7FF))
+				|| ((codePoint >= 0xE000) && (codePoint <= 0xFFFD))
+				|| ((codePoint >= 0x10000) && (codePoint <= 0x10FFFF)));
+	}
+
+	private static String filterEmoji(String source) {
+		if (!containsEmoji(source)) {
+			return source;// don't contain, just return
+		}
+
+		StringBuilder buf = null;
+		int len = source.length();
+
+		for (int i = 0; i < len; i++) {
+			char codePoint = source.charAt(i);
+
+			if (!isEmojiCharacter(codePoint)) {
+				if (buf == null) {
+					buf = new StringBuilder(source.length());
+				}
+
+				buf.append(codePoint);
+			} else {
+			}
+		}
+
+		if (buf == null) {
+			return null;
+		} else {
+			if (buf.length() == len) {
+				buf = null;
+				return source;
+			} else {
+				return buf.toString();
+			}
+		}
+	}
 }
